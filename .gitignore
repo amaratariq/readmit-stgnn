@@ -105,6 +105,7 @@ celerybeat.pid
 .env
 .venv
 env/
+readmit-venv/
 venv/
 ENV/
 env.bak/
@@ -127,3 +128,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Keep trained model out of public repo
+pretrained/best.pth.tar
+
+# don't push data files
+Mayo/ehr/
+results/
+node_mapping.pkl
+
+# wandb output
+wandb/

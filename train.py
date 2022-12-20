@@ -31,6 +31,8 @@ from model.fusion import (
 from constants import *
 from dotted_dict import DottedDict
 
+script_path = os.path.dirname(os.path.realpath(__file__))
+
 
 def evaluate(
     args,
@@ -128,8 +130,13 @@ def main(args):
     logger.info("Args: {}".format(dumps(vars(args), indent=4, sort_keys=True)))
 
     # wandb
-    wandb.init(project="covid-gnn", entity="siyitang")
-    wandb.init(config=args)
+    if('wandb_mode' in args.__dict__):
+        wandb.init(project="covid-gnn", entity="siyitang", mode=args.wandb_mode)
+        wandb.init(config=args, mode=args.wandb_mode)
+    else:
+        wandb.init(project="covid-gnn", entity="siyitang")
+        wandb.init(config=args)
+
     wandb.run.name = "{}_{}_edge_{}_edgeThresh_{}_hidden={}_rnnLayers={}_{}".format(
         args.model_name,
         args.g_conv,
@@ -199,8 +206,16 @@ def main(args):
     test_mask = g[0].ndata["test_mask"]
 
     # save graph for post analyses
-    with open(os.path.join(args.save_dir, "node_labels.pkl"), "wb") as pf:
-        pickle.dump(labels.data.cpu().numpy(), pf)
+        
+    if(args.save_dir.startswith("gs:")):
+        local_path = os.path.join(script_path, "node_labels.pkl")
+        gs_path = args.save_dir = '/node_labels.pkl'
+        with open(local_path, "wb") as pf:
+            pickle.dump(labels.data.cpu().numpy(), pf)
+        gcsfs.GCSFileSystem().put(local_path, gs_path)
+    else:
+        with open(os.path.join(args.save_dir, "node_labels.pkl"), "wb") as pf:
+            pickle.dump(labels.data.cpu().numpy(), pf)
 
     # ensure self-edges
     for idx_g in range(len(g)):
